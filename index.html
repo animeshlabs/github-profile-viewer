@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>GH//VIEWER — Futuristic GitHub Profile Viewer</title>
+  <meta name="description" content="Scan any GitHub profile: stats, repositories, activity heatmap, language charts, followers and more. Built with vanilla JavaScript, fully responsive, dark & light.">
+  <meta name="theme-color" content="#05070f" id="metaTheme">
+  <meta name="color-scheme" content="dark light">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="GH//VIEWER — Futuristic GitHub Profile Viewer">
+  <meta property="og:description" content="Scan any GitHub profile: stats, repositories, activity heatmap, language charts and more.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2305070f'/%3E%3Cpath d='M32 8 54 21v22L32 56 10 43V21Z' fill='none' stroke='%2338f2ff' stroke-width='3'/%3E%3Cpath d='M24 26h16M24 32h16M24 38h10' stroke='%23ff4ecd' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://api.github.com">
+  <link rel="preconnect" href="https://github.com">
+  <link rel="preconnect" href="https://avatars.githubusercontent.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@600;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- ================= BACKGROUND FX ================= -->
+  <div class="fx" aria-hidden="true">
+    <div class="fx-grid"></div>
+    <div class="fx-orb fx-orb--a"></div>
+    <div class="fx-orb fx-orb--b"></div>
+    <div class="fx-scan"></div>
+  </div>
+
+  <div class="scroll-progress" aria-hidden="true"><i id="scrollBar"></i></div>
+
+  <!-- ================= HEADER ================= -->
+  <header class="topbar" id="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#" id="brandLink" aria-label="GH ViewEr home">
+        <span class="brand-mark" aria-hidden="true">◈</span>
+        <span class="brand-text">GH<em>//</em>VIEWER</span>
+      </a>
+
+      <form class="search" id="searchForm" role="search" autocomplete="off">
+        <span class="search-ico" aria-hidden="true"></span>
+        <input id="searchInput" class="search-input" type="search" name="q"
+               placeholder="Enter a GitHub username…" aria-label="Search GitHub users"
+               spellcheck="false" autocapitalize="off" aria-autocomplete="list"
+               aria-controls="suggest" aria-expanded="false">
+        <kbd class="kbd kbd--hint" aria-hidden="true">/</kbd>
+        <button class="btn btn-primary search-btn" type="submit">SCAN</button>
+        <div class="suggest" id="suggest" role="listbox" aria-label="Suggestions" hidden></div>
+      </form>
+
+      <div class="topbar-actions">
+        <div class="quota" id="quota" title="GitHub REST API quota (refreshes hourly)">
+          <span class="quota-label">API</span>
+          <span class="quota-track"><i id="quotaFill"></i></span>
+          <span class="quota-num mono" id="quotaNum">–</span>
+        </div>
+        <button class="icon-btn" id="shortcutsBtn" type="button" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts"></button>
+        <button class="icon-btn" id="themeBtn" type="button" title="Toggle theme (T)" aria-label="Toggle color theme" aria-pressed="false"></button>
+        <a class="icon-btn icon-btn--link" id="ghLink" href="https://github.com" target="_blank" rel="noopener noreferrer" title="GitHub" aria-label="Open github.com"></a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="main">
+
+    <!-- ================= HERO ================= -->
+    <section class="hero" id="hero">
+      <p class="eyebrow reveal">// GITHUB RECONSOLE &nbsp;v3.0</p>
+      <h1 class="hero-title reveal">
+        SCAN ANY<br>
+        <span class="grad type-target" id="typeTarget">GITHUB PROFILE</span>
+      </h1>
+      <p class="hero-sub reveal">
+        Deep-scan any public GitHub identity — repositories, stars, languages, activity
+        heatmaps and social graphs. 100% client-side, vanilla JavaScript, zero tracking.
+      </p>
+
+      <form class="hero-search reveal" id="heroForm" role="search" autocomplete="off">
+        <span class="hero-search__ico" aria-hidden="true"></span>
+        <input id="heroInput" type="search" placeholder="octocat" aria-label="GitHub username"
+               spellcheck="false" autocapitalize="off">
+        <button class="btn btn-primary" type="submit">INITIATE SCAN</button>
+      </form>
+
+      <div class="hero-recent reveal" id="recentWrap" hidden>
+        <span class="chip-label">RECENT</span>
+        <div class="chip-row" id="recentList"></div>
+      </div>
+
+      <div class="quick reveal" id="quickScan">
+        <span class="chip-label">QUICK SCAN</span>
+        <div class="quick-row">
+          <button class="quick-card" type="button" data-user="octocat"><img alt="" width="40" height="40" loading="lazy"><span>octocat</span></button>
+          <button class="quick-card" type="button" data-user="torvalds"><img alt="" width="40" height="40" loading="lazy"><span>torvalds</span></button>
+          <button class="quick-card" type="button" data-user="sindresorhus"><img alt="" width="40" height="40" loading="lazy"><span>sindresorhus</span></button>
+          <button class="quick-card" type="button" data-user="yyx990803"><img alt="" width="40" height="40" loading="lazy"><span>yyx990803</span></button>
+        </div>
+      </div>
+
+      <ul class="feature-grid reveal" id="featureGrid">
+        <li class="feat"><span class="feat-ico" data-ico="repo"></span><b>Repo Intel</b><i>filter, sort, language facets</i></li>
+        <li class="feat"><span class="feat-ico" data-ico="pulse"></span><b>Live Activity</b><i>pushes, PRs, stars, forks</i></li>
+        <li class="feat"><span class="feat-ico" data-ico="chart"></span><b>Visual Analytics</b><i>donut, radar &amp; bar charts</i></li>
+        <li class="feat"><span class="feat-ico" data-ico="grid"></span><b>Heatmap</b><i>90-day contribution pulse</i></li>
+        <li class="feat"><span class="feat-ico" data-ico="users"></span><b>Social Graph</b><i>followers &amp; following</i></li>
+        <li class="feat"><span class="feat-ico" data-ico="bolt"></span><b>Smart Cache</b><i>instant repeat scans</i></li>
+        <li class="feat"><span class="feat-ico" data-ico="share"></span><b>Share &amp; Export</b><i>links, JSON, clipboard</i></li>
+        <li class="feat"><span class="feat-ico" data-ico="keyboard"></span><b>Keyboard First</b><i>command-ready controls</i></li>
+      </ul>
+
+      <p class="hero-meta mono reveal">
+        <span>60 API CALLS / HR</span><span class="dot"></span>
+        <span>NO ACCOUNT NEEDED</span><span class="dot"></span>
+        <span>RESPONSIVE EVERYWHERE</span>
+      </p>
+    </section>
+
+    <!-- ================= LOADER ================= -->
+    <section class="loader" id="loader" aria-live="polite" hidden>
+      <div class="profile-grid">
+        <aside class="side">
+          <div class="card sk sk--profile"></div>
+          <div class="card sk sk--chart"></div>
+        </aside>
+        <div class="main-col">
+          <div class="sk sk--tabs"></div>
+          <div class="card sk sk--stats"></div>
+          <div class="card sk sk--block"></div>
+          <div class="card sk sk--block"></div>
+        </div>
+      </div>
+      <p class="loader-label mono">ESTABLISHING UPLINK<span class="dots"><i>.</i><i>.</i><i>.</i></span></p>
+    </section>
+
+    <!-- ================= ERROR ================= -->
+    <section class="error-state" id="errorState" hidden>
+      <div class="card error-card">
+        <span class="error-ico" id="errorIco" aria-hidden="true"></span>
+        <p class="eyebrow" id="errorCode">// ERR</p>
+        <h2 class="error-title" id="errorTitle">SOMETHING BROKE</h2>
+        <p class="error-msg" id="errorMsg"></p>
+        <div class="error-actions">
+          <button class="btn btn-primary" id="errorRetry" type="button">RETRY SCAN</button>
+          <button class="btn btn-ghost" id="errorHome" type="button">BACK TO HOME</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PROFILE ================= -->
+    <section class="profile" id="profileView" hidden>
+      <div class="profile-grid">
+        <aside class="side" id="sideCol"></aside>
+
+        <div class="main-col">
+          <nav class="tabs" id="tabs" role="tablist" aria-label="Profile sections">
+            <button class="tab is-active" role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true" data-tab="overview" type="button">Overview</button>
+            <button class="tab" role="tab" id="tab-repos" aria-controls="panel-repos" aria-selected="false" data-tab="repos" type="button">Repos <span class="tab-count" id="cntRepos">0</span></button>
+            <button class="tab" role="tab" id="tab-activity" aria-controls="panel-activity" aria-selected="false" data-tab="activity" type="button">Activity <span class="tab-count" id="cntActivity">0</span></button>
+            <button class="tab" role="tab" id="tab-followers" aria-controls="panel-followers" aria-selected="false" data-tab="followers" type="button">Followers <span class="tab-count" id="cntFollowers">0</span></button>
+            <button class="tab" role="tab" id="tab-following" aria-controls="panel-following" aria-selected="false" data-tab="following" type="button">Following <span class="tab-count" id="cntFollowing">0</span></button>
+          </nav>
+
+          <div class="panels">
+            <section class="panel is-active" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" tabindex="0"></section>
+
+            <section class="panel" id="panel-repos" role="tabpanel" aria-labelledby="tab-repos" tabindex="0" hidden>
+              <div class="toolbar" id="repoToolbar">
+                <label class="field field--grow">
+                  <span class="field-ico" data-ico="search" aria-hidden="true"></span>
+                  <input id="repoSearch" type="search" placeholder="Filter repositories…" aria-label="Filter repositories" spellcheck="false">
+                </label>
+                <label class="field">
+                  <span class="field-tag">SORT</span>
+                  <select id="repoSort" aria-label="Sort repositories">
+                    <option value="stars">Stars</option>
+                    <option value="forks">Forks</option>
+                    <option value="updated">Updated</option>
+                    <option value="name">Name</option>
+                    <option value="size">Size</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span class="field-tag">LANG</span>
+                  <select id="repoLang" aria-label="Filter by language"><option value="all">All</option></select>
+                </label>
+                <button class="icon-btn" id="repoDir" type="button" title="Toggle sort direction" aria-label="Toggle sort direction">↓</button>
+                <span class="result-count mono" id="repoCount"></span>
+              </div>
+              <div class="repo-grid" id="repoList"></div>
+              <div class="panel-empty" id="repoEmpty" hidden>
+                <p>No repository matches this filter.</p>
+                <button class="btn btn-ghost" id="repoReset" type="button">RESET FILTERS</button>
+              </div>
+              <div class="more-wrap" id="repoMoreWrap" hidden>
+                <button class="btn btn-ghost" id="repoMore" type="button">LOAD MORE REPOS</button>
+              </div>
+            </section>
+
+            <section class="panel" id="panel-activity" role="tabpanel" aria-labelledby="tab-activity" tabindex="0" hidden>
+              <ul class="activity" id="activityList"></ul>
+              <div class="panel-empty" id="activityEmpty" hidden><p>No public activity in the last 90 days.</p></div>
+            </section>
+
+            <section class="panel" id="panel-followers" role="tabpanel" aria-labelledby="tab-followers" tabindex="0" hidden>
+              <div class="people-grid" id="followersList"></div>
+              <div class="panel-empty" id="followersEmpty" hidden><p>No followers yet — be the first signal.</p></div>
+              <div class="more-wrap" id="followersMoreWrap" hidden>
+                <button class="btn btn-ghost" id="followersMore" type="button">LOAD MORE</button>
+              </div>
+            </section>
+
+            <section class="panel" id="panel-following" role="tabpanel" aria-labelledby="tab-following" tabindex="0" hidden>
+              <div class="people-grid" id="followingList"></div>
+              <div class="panel-empty" id="followingEmpty" hidden><p>This account follows nobody.</p></div>
+              <div class="more-wrap" id="followingMoreWrap" hidden>
+                <button class="btn btn-ghost" id="followingMore" type="button">LOAD MORE</button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <p class="footer-brand"><span class="brand-mark">◈</span> GH<em>//</em>VIEWER</p>
+      <p>Built with vanilla JavaScript on the public GitHub REST API. No build tools, no frameworks, no tracking.</p>
+      <p class="footer-links">
+        <a href="https://docs.github.com/en/rest" target="_blank" rel="noopener noreferrer">API docs</a>
+        <span class="dot"></span>
+        <button class="link-btn" id="footerShortcuts" type="button">Shortcuts</button>
+        <span class="dot"></span>
+        <span class="mono">press <kbd class="kbd">/</kbd> to scan</span>
+      </p>
+    </div>
+  </footer>
+
+  <button class="to-top" id="toTop" type="button" aria-label="Back to top"></button>
+
+  <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+  <!-- ================= SHORTCUTS MODAL ================= -->
+  <div class="modal" id="shortcutsModal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card card" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">
+      <header class="modal-head">
+        <h2 id="shortcutsTitle">COMMAND REFERENCE</h2>
+        <button class="icon-btn" id="shortcutsClose" type="button" aria-label="Close shortcuts"></button>
+      </header>
+      <ul class="shortcut-list">
+        <li><kbd class="kbd">/</kbd><span>Focus the scanner</span></li>
+        <li><kbd class="kbd">Ctrl</kbd><span>+</span><kbd class="kbd">K</kbd><span>Focus the scanner</span></li>
+        <li><kbd class="kbd">1</kbd>–<kbd class="kbd">5</kbd><span>Switch tabs</span></li>
+        <li><kbd class="kbd">T</kbd><span>Toggle dark / light theme</span></li>
+        <li><kbd class="kbd">↑</kbd><kbd class="kbd">↓</kbd><span>Navigate suggestions</span></li>
+        <li><kbd class="kbd">Esc</kbd><span>Close overlay / blur input</span></li>
+        <li><kbd class="kbd">?</kbd><span>Show this reference</span></li>
+      </ul>
+      <footer class="modal-foot mono">GH//VIEWER · COMMAND LAYER ONLINE</footer>
+    </div>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
